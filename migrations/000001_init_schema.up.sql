@@ -39,13 +39,6 @@ CREATE TABLE IF NOT EXISTS observations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Attach sequences for existing databases
-CREATE SEQUENCE IF NOT EXISTS species_id_seq;
-ALTER TABLE species ALTER COLUMN id SET DEFAULT nextval('species_id_seq');
-
-CREATE SEQUENCE IF NOT EXISTS observations_id_seq;
-ALTER TABLE observations ALTER COLUMN id SET DEFAULT nextval('observations_id_seq');
-
 -- Spatial and standard indexes
 CREATE INDEX IF NOT EXISTS idx_obs_location_geom ON observations USING GIST (location_geom);
 CREATE INDEX IF NOT EXISTS idx_obs_biome ON observations(biome);
