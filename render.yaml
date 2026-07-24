@@ -1,0 +1,23 @@
+services:
+  # REST API Service
+  - type: web
+    name: wildpulse-api
+    env: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false # Set via Render dashboard to your Neon.tech / Supabase PostgreSQL URL
+
+  # Background Worker Service for GBIF & IUCN Ingestion
+  - type: worker
+    name: wildpulse-workers
+    env: docker
+    dockerfilePath: ./apps/workers/Dockerfile
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set via Render dashboard to your Neon.tech / Supabase PostgreSQL URL
