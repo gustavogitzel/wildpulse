@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-07-24
+
+### ✨ Added
+- **On-Demand Ingestion Endpoint**: Added `POST /api/v1/observations/trigger` endpoint to execute the GBIF occurrence collector & IUCN threat enrichment pipeline on-demand, saving records directly to PostgreSQL PostGIS.
+- **OpenAPI 3.0 Updates**: Updated embedded `swagger.json` documentation and Swagger UI (`/swagger`, `/docs`) with the new trigger endpoint specification.
+
+### 🔄 Changed
+- **Shared Ingestion Modules**: Refactored `collector` and `enricher` from internal worker packages to `pkg/collector` and `pkg/enricher`, enabling clean shared access between worker cron jobs and API trigger handlers.
+
+### 🧹 Removed
+- **Mock Data Fallbacks**: Removed all mock data in-memory fallbacks from `PostgresRepository`, ensuring 100% of API endpoints interact directly with PostgreSQL PostGIS database tables (`observations`, `species`).
+
+---
+
 ## [1.0.0] - 2026-07-24
 
 ### ✨ Added
