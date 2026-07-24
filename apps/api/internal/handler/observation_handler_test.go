@@ -77,6 +77,15 @@ func (m *mockRepo) SaveObservations(ctx context.Context, obs []domain.Observatio
 	return len(obs), nil
 }
 
+type mockService struct {
+	*service.Service
+	mockRepo *mockRepo
+}
+
+func (ms *mockService) TriggerIngestion(ctx context.Context) (int, error) {
+	return 10, nil
+}
+
 func TestAPIHandlers(t *testing.T) {
 	repo := &mockRepo{}
 	svc := service.NewObservationService(repo)
@@ -111,6 +120,16 @@ func TestAPIHandlers(t *testing.T) {
 
 		if len(res.Data) == 0 {
 			t.Errorf("Expected observation results, got empty slice")
+		}
+	})
+
+	t.Run("POST /api/v1/observations/trigger", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/observations/trigger", nil)
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Expected 200 OK, got %d", rec.Code)
 		}
 	})
 

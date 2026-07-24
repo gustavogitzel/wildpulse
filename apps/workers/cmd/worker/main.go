@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"wildpulse/apps/workers/internal/collector"
-	"wildpulse/apps/workers/internal/enricher"
+	"wildpulse/pkg/collector"
+	"wildpulse/pkg/enricher"
+
 )
 
 func main() {

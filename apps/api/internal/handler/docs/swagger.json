@@ -39,7 +39,31 @@
         }
       }
     },
+    "/api/v1/observations/trigger": {
+      "post": {
+        "summary": "Trigger on-demand GBIF & IUCN observation ingestion",
+        "description": "Executes on-demand GBIF species occurrence ingestion and IUCN threat status enrichment pipeline, saving records to PostgreSQL PostGIS.",
+        "responses": {
+          "200": {
+            "description": "Ingestion job triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "message": { "type": "string", "example": "GBIF & IUCN observation ingestion triggered successfully" },
+                    "records_ingested": { "type": "integer", "example": 15 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/observations": {
+
       "get": {
         "summary": "List geospatial biodiversity observations",
         "description": "Retrieve paginated biodiversity occurrences filtered by bounding box coordinates, biome, taxa, or IUCN status.",

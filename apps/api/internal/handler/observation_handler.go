@@ -25,6 +25,7 @@ func NewHandler(svc service.ObservationService) *Handler {
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/observations", h.GetObservations)
+		r.Post("/observations/trigger", h.TriggerIngestion)
 		r.Get("/species/{id}", h.GetSpeciesByID)
 		r.Get("/stats", h.GetStats)
 	})
@@ -82,7 +83,6 @@ func (h *Handler) SwaggerUI(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(html))
 }
 
-
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]string{
 		"status":  "healthy",
@@ -139,6 +139,20 @@ func (h *Handler) GetObservations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, result)
+}
+
+func (h *Handler) TriggerIngestion(w http.ResponseWriter, r *http.Request) {
+	count, err := h.svc.TriggerIngestion(r.Context())
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "Failed to trigger ingestion pipeline", err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]any{
+		"status":           "success",
+		"message":          "GBIF & IUCN observation ingestion triggered successfully",
+		"records_ingested": count,
+	})
 }
 
 func (h *Handler) GetSpeciesByID(w http.ResponseWriter, r *http.Request) {
