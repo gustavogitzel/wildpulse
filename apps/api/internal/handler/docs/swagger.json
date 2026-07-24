@@ -1,0 +1,199 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WildPulse REST API",
+    "description": "High-performance Go backend REST API for WildPulse geospatial biodiversity monitoring and species threat tracking.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "WildPulse Engineering Team",
+      "url": "https://github.com/wildpulse"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "description": "Returns operational status of the WildPulse REST API service.",
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "healthy" },
+                    "service": { "type": "string", "example": "wildpulse-api" },
+                    "version": { "type": "string", "example": "1.0.0" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/observations": {
+      "get": {
+        "summary": "List geospatial biodiversity observations",
+        "description": "Retrieve paginated biodiversity occurrences filtered by bounding box coordinates, biome, taxa, or IUCN status.",
+        "parameters": [
+          { "name": "min_lat", "in": "query", "description": "Minimum latitude (-90 to 90)", "required": false, "schema": { "type": "number", "format": "double" } },
+          { "name": "max_lat", "in": "query", "description": "Maximum latitude (-90 to 90)", "required": false, "schema": { "type": "number", "format": "double" } },
+          { "name": "min_lng", "in": "query", "description": "Minimum longitude (-180 to 180)", "required": false, "schema": { "type": "number", "format": "double" } },
+          { "name": "max_lng", "in": "query", "description": "Maximum longitude (-180 to 180)", "required": false, "schema": { "type": "number", "format": "double" } },
+          { "name": "biome", "in": "query", "description": "Filter by biome (Amazônia, Cerrado, Mata Atlântica, Pantanal, Caatinga, Pampa)", "required": false, "schema": { "type": "string" } },
+          { "name": "taxa", "in": "query", "description": "Search by common or scientific name", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "description": "Filter by IUCN threat status (CR, EN, VU, NT, LC)", "required": false, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "description": "Number of records to return (default 20)", "required": false, "schema": { "type": "integer", "default": 20 } },
+          { "name": "offset", "in": "query", "description": "Offset for pagination", "required": false, "schema": { "type": "integer", "default": 0 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of observations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedObservations"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/species/{id}": {
+      "get": {
+        "summary": "Get species details and occurrence history",
+        "description": "Returns detailed taxonomy and IUCN status for a specific species ID, along with recent occurrence records.",
+        "parameters": [
+          { "name": "id", "in": "path", "description": "Species ID or Taxon Key", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Species details with occurrence list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpeciesDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Species not found"
+          }
+        }
+      }
+    },
+    "/api/v1/stats": {
+      "get": {
+        "summary": "Get aggregated platform statistics",
+        "description": "Returns aggregate totals of observations, species counts, threatened species, and breakdown by biome.",
+        "responses": {
+          "200": {
+            "description": "Platform statistics summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Observation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 2435099 },
+          "taxon_key": { "type": "integer", "example": 2435099 },
+          "species_name": { "type": "string", "example": "Onça-pintada" },
+          "scientific_name": { "type": "string", "example": "Panthera onca" },
+          "latitude": { "type": "number", "format": "double", "example": -15.7939 },
+          "longitude": { "type": "number", "format": "double", "example": -47.8828 },
+          "image_url": { "type": "string", "example": "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55" },
+          "event_date": { "type": "string", "format": "date-time" },
+          "biome": { "type": "string", "example": "Cerrado" },
+          "country": { "type": "string", "example": "Brasil" },
+          "locality": { "type": "string", "example": "Parque Nacional de Brasília" },
+          "dataset_key": { "type": "string", "example": "gbif-south-america-2026" },
+          "iucn_status": { "type": "string", "example": "VU" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PaginatedObservations": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Observation" }
+          },
+          "total": { "type": "integer", "example": 142 },
+          "limit": { "type": "integer", "example": 20 },
+          "offset": { "type": "integer", "example": 0 },
+          "has_next_page": { "type": "boolean", "example": true }
+        }
+      },
+      "Species": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 2435099 },
+          "taxon_key": { "type": "integer", "example": 2435099 },
+          "species_name": { "type": "string", "example": "Onça-pintada" },
+          "scientific_name": { "type": "string", "example": "Panthera onca" },
+          "kingdom": { "type": "string", "example": "Animalia" },
+          "phylum": { "type": "string", "example": "Chordata" },
+          "class": { "type": "string", "example": "Mammalia" },
+          "order": { "type": "string", "example": "Carnivora" },
+          "family": { "type": "string", "example": "Felidae" },
+          "iucn_status": { "type": "string", "example": "VU" },
+          "description": { "type": "string" },
+          "image_url": { "type": "string" },
+          "total_count": { "type": "integer", "example": 142 }
+        }
+      },
+      "SpeciesDetailsResponse": {
+        "type": "object",
+        "properties": {
+          "species": { "$ref": "#/components/schemas/Species" },
+          "occurrences": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Observation" }
+          }
+        }
+      },
+      "BiomeStat": {
+        "type": "object",
+        "properties": {
+          "biome": { "type": "string", "example": "Amazônia" },
+          "count": { "type": "integer", "example": 450 }
+        }
+      },
+      "StatsSummary": {
+        "type": "object",
+        "properties": {
+          "total_observations": { "type": "integer", "example": 1250 },
+          "total_species": { "type": "integer", "example": 184 },
+          "threatened_species": { "type": "integer", "example": 32 },
+          "active_biomes": { "type": "integer", "example": 6 },
+          "biomes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BiomeStat" }
+          },
+          "last_ingest_time": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
