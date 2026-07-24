@@ -16,33 +16,35 @@ import (
 )
 
 type GBIFOccurrenceResult struct {
-	Key            int64   `json:"key"`
-	SpeciesKey     int64   `json:"speciesKey"`
-	TaxonKey       int64   `json:"taxonKey"`
-	Species        string  `json:"species"`
-	ScientificName string  `json:"scientificName"`
-	DecimalLat     float64 `json:"decimalLatitude"`
-	DecimalLng     float64 `json:"decimalLongitude"`
-	Country        string  `json:"country"`
-	Locality       string  `json:"locality"`
-	EventDate      string  `json:"eventDate"`
-	Media          []struct {
-		Type        string `json:"type"`
-		Identifier  string `json:"identifier"`
-		Format      string `json:"format"`
+	Key                  int64   `json:"key"`
+	SpeciesKey           int64   `json:"speciesKey"`
+	TaxonKey             int64   `json:"taxonKey"`
+	Species              string  `json:"species"`
+	ScientificName       string  `json:"scientificName"`
+	DecimalLat           float64 `json:"decimalLatitude"`
+	DecimalLng           float64 `json:"decimalLongitude"`
+	Country              string  `json:"country"`
+	Locality             string  `json:"locality"`
+	StateProvince        string  `json:"stateProvince"`
+	EventDate            string  `json:"eventDate"`
+	IUCNRedListCategory  string  `json:"iucnRedListCategory"`
+	Media                []struct {
+		Type       string `json:"type"`
+		Identifier string `json:"identifier"`
+		Format     string `json:"format"`
 	} `json:"media"`
 }
 
 type GBIFSearchResponse struct {
-	Offset     int                    `json:"offset"`
-	Limit      int                    `json:"limit"`
-	EndOfRecords bool                 `json:"endOfRecords"`
-	Count      int                    `json:"count"`
-	Results    []GBIFOccurrenceResult `json:"results"`
+	Offset       int                    `json:"offset"`
+	Limit        int                    `json:"limit"`
+	EndOfRecords bool                   `json:"endOfRecords"`
+	Count        int                    `json:"count"`
+	Results      []GBIFOccurrenceResult `json:"results"`
 }
 
 type GBIFCollector struct {
-	httpClient *http.Client
+	httpClient  *http.Client
 	workerCount int
 }
 
@@ -51,7 +53,7 @@ func NewGBIFCollector(workerCount int) *GBIFCollector {
 		workerCount = 5
 	}
 	return &GBIFCollector{
-		httpClient: &http.Client{Timeout: 15 * time.Second},
+		httpClient:  &http.Client{Timeout: 15 * time.Second},
 		workerCount: workerCount,
 	}
 }
@@ -110,8 +112,7 @@ func (c *GBIFCollector) fetchPage(ctx context.Context, page int) ([]domain.Obser
 
 	baseURL := "https://api.gbif.org/v1/occurrence/search"
 	params := url.Values{}
-	params.Add("decimalLatitude", "-34,5")   // South America latitude range
-	params.Add("decimalLongitude", "-74,-34") // South America longitude range
+	params.Add("country", "BR")
 	params.Add("mediaType", "StillImage")
 	params.Add("hasCoordinate", "true")
 	params.Add("limit", strconv.Itoa(limit))
@@ -182,9 +183,20 @@ func (c *GBIFCollector) fetchPage(ctx context.Context, page int) ([]domain.Obser
 		}
 
 		biome := spatial.DetectBiome(rec.DecimalLat, rec.DecimalLng)
+		locality := rec.Locality
+		if locality == "" {
+			locality = rec.StateProvince
+		}
+		if locality == "" {
+			locality = fmt.Sprintf("Região %s", biome)
+		}
+
+		iucnStatus := domain.IUCNStatus(rec.IUCNRedListCategory)
+		if iucnStatus == "" {
+			iucnStatus = domain.StatusLC
+		}
 
 		obs := domain.Observation{
-			ID:             rec.Key,
 			TaxonKey:       taxonKey,
 			SpeciesName:    speciesName,
 			ScientificName: rec.ScientificName,
@@ -194,9 +206,9 @@ func (c *GBIFCollector) fetchPage(ctx context.Context, page int) ([]domain.Obser
 			EventDate:      eventTime,
 			Biome:          biome,
 			Country:        rec.Country,
-			Locality:       rec.Locality,
-			DatasetKey:     "gbif-occurrence-api",
-			IUCNStatus:     domain.StatusLC, // Default, enriched by IUCN worker
+			Locality:       locality,
+			DatasetKey:     "gbif-south-america-2026",
+			IUCNStatus:     iucnStatus,
 			CreatedAt:      time.Now(),
 		}
 		observations = append(observations, obs)

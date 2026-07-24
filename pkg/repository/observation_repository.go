@@ -3,12 +3,14 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"wildpulse/pkg/domain"
 	"wildpulse/pkg/spatial"
 )
+
 
 type ObservationRepository interface {
 	GetObservations(ctx context.Context, filter domain.ObservationFilter) (*domain.PaginatedResult[domain.Observation], error)
@@ -65,7 +67,9 @@ func (r *PostgresRepository) SaveObservations(ctx context.Context, obs []domain.
 				image_url = EXCLUDED.image_url,
 				updated_at = NOW()
 		`
-		_, _ = r.pool.Exec(ctx, querySpecies, o.TaxonKey, o.SpeciesName, o.ScientificName, string(o.IUCNStatus), o.ImageURL)
+		if _, err := r.pool.Exec(ctx, querySpecies, o.TaxonKey, o.SpeciesName, o.ScientificName, string(o.IUCNStatus), o.ImageURL); err != nil {
+			log.Printf("⚠️ Error upserting species %d (%s): %v", o.TaxonKey, o.SpeciesName, err)
+		}
 
 		// Insert observation record
 		queryObs := `
@@ -73,11 +77,14 @@ func (r *PostgresRepository) SaveObservations(ctx context.Context, obs []domain.
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
 		`
 		_, err := r.pool.Exec(ctx, queryObs, o.TaxonKey, o.SpeciesName, o.ScientificName, o.Latitude, o.Longitude, o.ImageURL, o.EventDate, o.Biome, o.Country, o.Locality, o.DatasetKey, string(o.IUCNStatus))
-		if err == nil {
+		if err != nil {
+			log.Printf("⚠️ Error inserting observation for %s: %v", o.SpeciesName, err)
+		} else {
 			saved++
 		}
 	}
 	return saved, nil
+
 }
 
 func (r *PostgresRepository) getObservationsFromDB(ctx context.Context, filter domain.ObservationFilter) (*domain.PaginatedResult[domain.Observation], error) {

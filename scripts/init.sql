@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- Table: species
 CREATE TABLE IF NOT EXISTS species (
-    id BIGINT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     taxon_key BIGINT UNIQUE NOT NULL,
     species_name VARCHAR(255) NOT NULL,
     scientific_name VARCHAR(255) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS species (
 
 -- Table: observations
 CREATE TABLE IF NOT EXISTS observations (
-    id BIGINT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     taxon_key BIGINT NOT NULL,
     species_name VARCHAR(255) NOT NULL,
     scientific_name VARCHAR(255) NOT NULL,
