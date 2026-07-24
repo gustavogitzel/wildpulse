@@ -16,9 +16,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"wildpulse/apps/api/internal/handler"
-	"wildpulse/apps/api/internal/repository"
 	"wildpulse/apps/api/internal/service"
 	"wildpulse/pkg/database"
+	"wildpulse/pkg/repository"
 )
 
 func main() {
@@ -32,23 +32,42 @@ func main() {
 		dbURL = "postgres://postgres:postgres@localhost:5432/wildpulse?sslmode=disable"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	var pool *pgxpool.Pool
-	var err error
-	pool, err = pgxpool.New(ctx, dbURL)
-	if err != nil || pool.Ping(ctx) != nil {
-		log.Printf("⚠️ PostgreSQL connection unavailable (%v). Running API in high-performance mock/in-memory fallback mode.", err)
-		pool = nil
-	} else {
-		log.Println("✅ Successfully connected to PostgreSQL / PostGIS database.")
-		if err := database.RunMigrations(ctx, pool); err != nil {
-			log.Printf("⚠️ Migration warning: %v", err)
+	var poolErr error
+
+	// Connect with Retry Loop (tries up to 5 times over 10 seconds for local Docker DB startup)
+	for attempt := 1; attempt <= 5; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		p, err := pgxpool.New(ctx, dbURL)
+		if err == nil && p.Ping(ctx) == nil {
+			pool = p
+			cancel()
+			log.Println("✅ Successfully connected to PostgreSQL / PostGIS database!")
+			break
+		}
+		if p != nil {
+			p.Close()
+		}
+		poolErr = err
+		cancel()
+		if attempt < 5 {
+			log.Printf("⏳ Waiting for database connection (attempt %d/5)...", attempt)
+			time.Sleep(2 * time.Second)
 		}
 	}
 
+	if pool == nil {
+		log.Fatalf("❌ FATAL: Unable to connect to PostgreSQL / PostGIS database (%v). Please ensure Docker is running ('docker compose up -d') or pass DATABASE_URL.", poolErr)
+	}
 
+	// Run Database Migrations
+	migrationCtx, migrationCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	if err := database.RunMigrations(migrationCtx, pool); err != nil {
+		log.Printf("⚠️ Migration warning: %v", err)
+	}
+	migrationCancel()
+
+	// Initialize Layers
 	repo := repository.NewPostgresRepository(pool)
 	svc := service.NewObservationService(repo)
 	hnd := handler.NewHandler(svc)

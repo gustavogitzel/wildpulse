@@ -6,7 +6,8 @@ import (
 	"log"
 	"time"
 
-	"wildpulse/apps/api/internal/repository"
+	"wildpulse/pkg/repository"
+
 	"wildpulse/pkg/collector"
 	"wildpulse/pkg/enricher"
 
