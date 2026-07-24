@@ -1,0 +1,34 @@
+name: WildPulse CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          check-latest: true
+
+      - name: Verify Go Modules
+        run: |
+          go work use ./apps/api ./apps/workers ./pkg
+
+      - name: Build Binaries
+        run: |
+          make build
+
+      - name: Run Unit & Integration Tests
+        run: |
+          make test

@@ -1,0 +1,23 @@
+name: Render Deploy Trigger
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  trigger-deploy:
+    name: Trigger Render Deployment
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "🚀 Triggering Render deployment via deploy hook..."
+            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          else
+            echo "ℹ️ RENDER_DEPLOY_HOOK_URL secret not set. Render will use automatic git push deploy."
+          fi

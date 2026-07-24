@@ -18,6 +18,7 @@ import (
 	"wildpulse/apps/api/internal/handler"
 	"wildpulse/apps/api/internal/repository"
 	"wildpulse/apps/api/internal/service"
+	"wildpulse/pkg/database"
 )
 
 func main() {
@@ -31,7 +32,7 @@ func main() {
 		dbURL = "postgres://postgres:postgres@localhost:5432/wildpulse?sslmode=disable"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	var pool *pgxpool.Pool
@@ -42,7 +43,11 @@ func main() {
 		pool = nil
 	} else {
 		log.Println("✅ Successfully connected to PostgreSQL / PostGIS database.")
+		if err := database.RunMigrations(ctx, pool); err != nil {
+			log.Printf("⚠️ Migration warning: %v", err)
+		}
 	}
+
 
 	repo := repository.NewPostgresRepository(pool)
 	svc := service.NewObservationService(repo)

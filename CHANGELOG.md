@@ -24,8 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **IUCN Enricher**: Species conservation status threat enrichment worker.
   - **Cron Scheduler**: Background execution via `robfig/cron/v3` every 30 minutes.
 - **OpenAPI / Swagger Documentation**: Embedded OpenAPI 3.0 specification (`swagger.json`) served via Swagger UI at `/swagger` and `/docs`.
-- **Infrastructure & Tools**:
+- **Automated Database Migrations (`pkg/database`)**: Built-in `embed` database migration runner executing `.up.sql` scripts sequentially inside database transactions upon API startup.
+- **Containerization & Cloud Infrastructure**:
   - Docker Compose setup with `postgis/postgis:15-3.3-alpine`.
-  - Database initial schema script (`scripts/init.sql`) with PostGIS spatial GIST indexes and automatic geometry sync triggers.
-  - Comprehensive `Makefile` with Colima socket auto-detection.
-  - Open source community standard documentation (`README.md`, `CONTRIBUTING.md`, `LICENSE`, `CHANGELOG.md`, `.gitignore`).
+  - Multi-stage Dockerfiles (`apps/api/Dockerfile` and `apps/workers/Dockerfile`) producing minimal ~15MB runtime images.
+  - Render Blueprint (`render.yaml`) for 1-click cloud deployment of Web API and Background Workers.
+- **GitHub Actions CI/CD Pipeline (`.github/workflows`)**:
+  - `ci.yml`: Automated build, Go workspace verification, and unit/integration testing on push/PR.
+  - `deploy.yml`: Render deployment trigger integration.
+- **Developer Automation**:
+  - Comprehensive `Makefile` with Colima Docker socket auto-detection.
+  - Community documentation suite (`README.md`, `CONTRIBUTING.md`, `LICENSE`, `CHANGELOG.md`, `.gitignore`).
