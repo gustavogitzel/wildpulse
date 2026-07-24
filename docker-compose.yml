@@ -1,12 +1,13 @@
 services:
   postgres:
-    image: postgis/postgis:15-3.3-alpine
+    image: kartoza/postgis:15-3.3
     container_name: wildpulse-db
     restart: always
     environment:
       POSTGRES_DB: wildpulse
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASS: postgres
+      ALLOW_IP_RANGE: "0.0.0.0/0"
     ports:
       - "5432:5432"
     volumes:
