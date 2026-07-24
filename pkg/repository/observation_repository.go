@@ -58,8 +58,8 @@ func (r *PostgresRepository) SaveObservations(ctx context.Context, obs []domain.
 	for _, o := range obs {
 		// Upsert species record
 		querySpecies := `
-			INSERT INTO species (taxon_key, species_name, scientific_name, iucn_status, image_url, total_count, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, 1, NOW(), NOW())
+			INSERT INTO species (id, taxon_key, species_name, scientific_name, iucn_status, image_url, total_count, created_at, updated_at)
+			VALUES ($1, $1, $2, $3, $4, $5, 1, NOW(), NOW())
 			ON CONFLICT (taxon_key) 
 			DO UPDATE SET 
 				total_count = species.total_count + 1,
@@ -69,6 +69,7 @@ func (r *PostgresRepository) SaveObservations(ctx context.Context, obs []domain.
 		if _, err := r.pool.Exec(ctx, querySpecies, o.TaxonKey, o.SpeciesName, o.ScientificName, string(o.IUCNStatus), o.ImageURL); err != nil {
 			log.Printf("⚠️ Error upserting species %d (%s): %v", o.TaxonKey, o.SpeciesName, err)
 		}
+
 
 		// Insert observation record
 		queryObs := `
